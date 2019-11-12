@@ -58,3 +58,24 @@ def test_before():
     print("HelloWorld")
     print("HelloWorld")
 """
+
+
+def test_let():
+    spec = """
+    $describe "simple_method" 
+        $let "val"
+            return "test"
+        $end
+        $example "example1"
+            print(val())
+        $end
+    $end
+     """
+    cmp = PythonCompiler()
+    code = cmp.compile(anyspec_parser.parseString(spec)[0])
+
+    assert code == """def test_simple_method_example1():
+    def val():
+        return "test"
+    print(val())
+"""

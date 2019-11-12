@@ -73,3 +73,18 @@ class Before(ASTLeaf, CodeNode):
 
     def __repr__(self):
         return f'Before(code={self._code}'
+
+
+class Let(ASTLeaf, CodeNode, NamedNode):
+    def __init__(self, name, code):
+        self._name = name
+        self._code = code
+
+    @classmethod
+    def parse_action(cls, string, locs, tokens):
+        name = tokens[1]
+        code = tokens[2]
+        return cls(name, code)
+
+    def __repr__(self):
+        return f'Let(name={self._name}, code={self._code}'
