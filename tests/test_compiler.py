@@ -105,3 +105,24 @@ def test_let_multi_set():
         return "nadeko"
     print(val())
 """
+
+
+def test_subject():
+    spec = """
+    $describe "simple_method" 
+        $subject
+            return "test"
+        $end
+        $example "example1"
+            print(subject())
+        $end
+    $end
+     """
+    cmp = PythonCompiler()
+    code = cmp.compile(anyspec_parser.parseString(spec)[0])
+
+    assert code == """def test_simple_method_example1():
+    def subject():
+        return "test"
+    print(subject())
+"""

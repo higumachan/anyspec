@@ -15,7 +15,7 @@ def align_indent(code: str, num_output_indent=1) -> str:
 
 def let_to_function(let):
     return f"""{INDENT}def {let.name}():
-{align_indent(let.code, num_output_indent=2)}"""
+{align_indent(let.code, num_output_indent=2)}"""  # TODO(higumachan): 2度呼び出したときは再利用する
 
 
 class TestCaseBuilder(object):

@@ -19,6 +19,7 @@ example = anyspec_literal('example') + name
 before = anyspec_literal('before')
 let = anyspec_literal('let')
 let_exc = anyspec_literal('let!')
+subject = anyspec_literal('subject')
 end = anyspec_literal('end')
 
 reserved = describe | context | end
@@ -34,13 +35,16 @@ before_block.setParseAction(Before.parse_action)
 let_block = (let + name + code + end)
 let_block.setParseAction(Let.parse_action)
 
+subject_block = (subject + code + end)
+subject_block.setParseAction(Let.subject_parse_action)
+
 describe_block = Forward()
 context_block = Forward()
 
-describe_block <<= describe + ZeroOrMore(context_block | describe_block | example_block | before_block | let_block) + end
+describe_block <<= describe + ZeroOrMore(context_block | describe_block | example_block | before_block | let_block | subject_block) + end
 describe_block.setParseAction(Describe.parse_action)
 
-context_block <<= context + ZeroOrMore(context_block | describe_block | example_block | before_block | let_block) + end
+context_block <<= context + ZeroOrMore(context_block | describe_block | example_block | before_block | let_block | subject_block) + end
 context_block.setParseAction(Describe.parse_action)
 
 
@@ -53,6 +57,9 @@ $describe "test1"
     $context "test2"
         $let "val" 
             return "test"
+        $end
+        $subject
+            return "subject"
         $end
         $before
             print("before")

@@ -86,5 +86,10 @@ class Let(ASTLeaf, CodeNode, NamedNode):
         code = tokens[2]
         return cls(name, code)
 
+    @classmethod
+    def subject_parse_action(cls, string, locs, tokens):
+        code = tokens[1]
+        return cls("subject", code)
+
     def __repr__(self):
         return f'Let(name={self._name}, code={self._code}'
