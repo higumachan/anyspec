@@ -18,7 +18,7 @@ def main():
         with inp.open() as f:
             ast = anyspec_parser.parseFile(f)[0]  # TODO(higumachan): create root parser
         code = compiler.compile(ast)
-        with (output_dir / (inp.name + ".py")).open("w") as f:
+        with (output_dir / ("test_" + inp.stem + "_spec" + ".py")).open("w") as f:
             f.write(code)
 
 

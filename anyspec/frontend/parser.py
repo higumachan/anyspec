@@ -10,13 +10,14 @@ def anyspec_literal(name):
     prefix = '$'
     return Literal(f'{prefix}{name}')
 
+
 space = OneOrMore(Word(' '))
 name = (QuotedString("\"") | QuotedString("'"))
 describe = anyspec_literal('describe') + name
 context = anyspec_literal('context') + name
 example = anyspec_literal('example') + name
-end = anyspec_literal('end')
 before = anyspec_literal('before')
+end = anyspec_literal('end')
 
 reserved = describe | context | end
 
@@ -29,18 +30,24 @@ before_block = before + code + end
 before_block.setParseAction(Before.parse_action)
 
 describe_block = Forward()
-describe_block <<= describe + ZeroOrMore(describe_block | example_block | before_block) + end
+context_block = Forward()
+
+describe_block <<= describe + ZeroOrMore(context_block | describe_block | example_block | before_block) + end
 describe_block.setParseAction(Describe.parse_action)
 
+context_block <<= context + ZeroOrMore(context_block | describe_block | example_block | before_block) + end
+context_block.setParseAction(Describe.parse_action)
 
-anyspec_parser = describe_block
+
+anyspec_parser = describe_block | context_block
 
 if __name__ == '__main__':
 
-    print(describe_block.parseString('''
+    print(anyspec_parser.parseString('''
 $describe "test1"
-    $describe "test2"
+    $context "test2"
         $before
+            print("before")
             print("before")
         $end
         $example "case1"

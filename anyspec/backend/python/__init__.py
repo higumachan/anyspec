@@ -3,11 +3,13 @@ from typing import List
 
 from anyspec.frontend.ast.node import ASTNode, Describe, Example, CodeNode, ASTLeaf, NamedNode
 
+INDENT = '    '  # TODO(higumachan): これをどうにかする
+
 
 def align_indent(code: str) -> str:
     code = code.strip('\n\r')
     num_indent = len(list(itertools.takewhile(lambda x: x == '\t' or x == ' ', code)))
-    lines = [line[num_indent:] for line in code.splitlines()]
+    lines = [INDENT + line[num_indent:] for line in code.splitlines()]
     return "\n".join(lines)
 
 
@@ -16,7 +18,7 @@ class TestCaseBuilder(object):
         self.testcases = []
 
     def linearize_preorder(self, ast: ASTNode, agg: List[ASTNode]):
-        if isinstance(ast, ASTLeaf):
+        if isinstance(ast, Example):
             self.add_testcase(agg, ast)
             return
 
@@ -27,8 +29,8 @@ class TestCaseBuilder(object):
         function_name = "test_" +\
                         "_".join([node.name for node in nodes if isinstance(node, NamedNode)]) +\
                         "_" + terminal.name
-        indent = '    '
-        codes = [indent + align_indent(node.code) for node in nodes if isinstance(node, CodeNode)] + [indent + align_indent(terminal.code)]
+        codes_related_describes = [align_indent(code_node.code) for dnode in nodes if isinstance(dnode, Describe) for code_node in dnode.children if isinstance(code_node, CodeNode) and not isinstance(code_node, Example)]
+        codes = codes_related_describes + [align_indent(terminal.code)]
         code = '\n'.join(codes)
 
         self.testcases.append(f"def {function_name}():\n{code}")

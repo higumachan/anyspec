@@ -68,7 +68,7 @@ class Before(ASTLeaf, CodeNode):
 
     @classmethod
     def parse_action(cls, string, locs, tokens):
-        code = tokens[2]
+        code = tokens[1]
         return cls(code)
 
     def __repr__(self):
