@@ -16,8 +16,8 @@ def main():
     compiler = PythonCompiler()
     for inp in args.inputs:  # type: Path
         with inp.open() as f:
-            ast = anyspec_parser.parseFile(f)[0]  # TODO(higumachan): create root parser
-        code = compiler.compile(ast)
+            ast_root_nodes = anyspec_parser.parseFile(f)  # TODO(higumachan): create root parser
+        code = compiler.compile(ast_root_nodes)
         with (output_dir / ("test_" + inp.stem + "_spec" + ".py")).open("w") as f:
             f.write(code)
 

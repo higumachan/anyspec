@@ -11,7 +11,7 @@ $describe "simple_method"
 $end
 """
     cmp = PythonCompiler()
-    code = cmp.compile(anyspec_parser.parseString(spec)[0])
+    code = cmp.compile(anyspec_parser.parseString(spec))
 
     assert code == """def test_simple_method_example1():
     print("HelloWorld")
@@ -28,7 +28,7 @@ def test_multi_line():
     $end
     """
     cmp = PythonCompiler()
-    code = cmp.compile(anyspec_parser.parseString(spec)[0])
+    code = cmp.compile(anyspec_parser.parseString(spec))
 
     assert code == """def test_simple_method_example1():
     print("HelloWorld")
@@ -50,7 +50,7 @@ def test_before():
     $end
     """
     cmp = PythonCompiler()
-    code = cmp.compile(anyspec_parser.parseString(spec)[0])
+    code = cmp.compile(anyspec_parser.parseString(spec))
 
     assert code == """def test_simple_method_example1():
     print("before")
@@ -72,7 +72,7 @@ def test_let():
     $end
      """
     cmp = PythonCompiler()
-    code = cmp.compile(anyspec_parser.parseString(spec)[0])
+    code = cmp.compile(anyspec_parser.parseString(spec))
 
     assert code == """def test_simple_method_example1():
     def val():
@@ -98,7 +98,7 @@ def test_let_multi_set():
         $end
          """
     cmp = PythonCompiler()
-    code = cmp.compile(anyspec_parser.parseString(spec)[0])
+    code = cmp.compile(anyspec_parser.parseString(spec))
 
     assert code == """def test_simple_method_simple_method2_example1():
     def val():
@@ -119,10 +119,34 @@ def test_subject():
     $end
      """
     cmp = PythonCompiler()
-    code = cmp.compile(anyspec_parser.parseString(spec)[0])
+    code = cmp.compile(anyspec_parser.parseString(spec))
 
     assert code == """def test_simple_method_example1():
     def subject():
         return "test"
     print(subject())
+"""
+
+
+def test_import():
+    spec = """
+    $import
+        import itertools
+        import functools
+    $end
+    
+    $describe "simple_method" 
+        $example "example1"
+            print("HelloWorld")
+        $end
+    $end
+    """
+    cmp = PythonCompiler()
+    code = cmp.compile(anyspec_parser.parseString(spec))
+
+    assert code == """import itertools
+import functools
+
+def test_simple_method_example1():
+    print("HelloWorld")
 """

@@ -3,7 +3,7 @@ from pyparsing import Word, OneOrMore, Literal, alphas, nums, alphanums, White, 
 import pyparsing
 import functools
 
-from anyspec.frontend.ast.node import Example, Describe, Before, Let
+from anyspec.frontend.ast.node import Example, Describe, Before, Let, Import
 
 
 def anyspec_literal(name):
@@ -19,12 +19,16 @@ example = anyspec_literal('example') + name
 before = anyspec_literal('before')
 let = anyspec_literal('let')
 let_exc = anyspec_literal('let!')
+_import = anyspec_literal('import')
 subject = anyspec_literal('subject')
 end = anyspec_literal('end')
 
 reserved = describe | context | end
 
-code = Combine(OneOrMore(Optional(White()) + ~reserved + (Word(alphanums + '=+*%/@$#!^|\'\\"()[]{}:;   ') | White())))
+code = Combine(OneOrMore(Optional(White()) + ~reserved + (Word(alphanums + '_.=+-*%/@$#!^|\'\\"()[]{}:;   ') | White())))
+
+import_block = _import + code + end
+import_block.setParseAction(Import.parse_action)
 
 example_block = example + code + end
 example_block.setParseAction(Example.parse_action)
@@ -48,11 +52,14 @@ context_block <<= context + ZeroOrMore(context_block | describe_block | example_
 context_block.setParseAction(Describe.parse_action)
 
 
-anyspec_parser = describe_block | context_block
+anyspec_parser = Optional(import_block) + ZeroOrMore(describe_block | context_block)
 
 if __name__ == '__main__':
 
     print(anyspec_parser.parseString('''
+$import
+    import test
+$end
 $describe "test1"
     $context "test2"
         $let "val" 
@@ -74,3 +81,16 @@ $describe "test1"
     $end
 $end
 '''))
+
+    print(anyspec_parser.parseString("""
+$describe "PythonCompiler"
+    $context "compile"
+        $let "cmp"
+            return "test"
+        $end
+        $subject
+            return cmp().compile(anyspec_parser.parseString(spec)[0])
+        $end
+    $end
+$end
+"""))
