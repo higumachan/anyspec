@@ -79,3 +79,29 @@ def test_let():
         return "test"
     print(val())
 """
+
+
+def test_let_multi_set():
+    spec = """
+        $describe "simple_method" 
+            $let "val"
+                return "test"
+            $end
+            $describe "simple_method2" 
+                $let "val"
+                    return "nadeko"
+                $end
+                $example "example1"
+                    print(val())
+                $end
+            $end
+        $end
+         """
+    cmp = PythonCompiler()
+    code = cmp.compile(anyspec_parser.parseString(spec)[0])
+
+    assert code == """def test_simple_method_simple_method2_example1():
+    def val():
+        return "nadeko"
+    print(val())
+"""
