@@ -54,3 +54,15 @@ class Example(ASTLeave, CodeNode):
 
     def __repr__(self):
         return f'Example(name={self._name}, code={self._code}'
+
+class Before(ASTLeave, CodeNode):
+    def __init__(self, code):
+        self._code = code
+
+    @classmethod
+    def parse_action(cls, string, locs, tokens):
+        code = tokens[2]
+        return cls(code)
+
+    def __repr__(self):
+        return f'Before(code={self._code}'
