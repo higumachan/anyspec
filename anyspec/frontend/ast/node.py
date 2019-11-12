@@ -13,7 +13,7 @@ class ASTNode(object):
         return result
 
 
-class ASTLeave(ASTNode):
+class ASTLeaf(ASTNode):
     @property
     def children(self) -> List['ASTNode']:
         return []
@@ -25,7 +25,13 @@ class CodeNode(object):
         return self._code
 
 
-class Describe(ASTNode):
+class NamedNode(object):
+    @property
+    def name(self):
+        return self._name
+
+
+class Describe(ASTNode, NamedNode):
     def __init__(self, name, children):
         self._name = name
         self._children = children
@@ -41,7 +47,7 @@ class Describe(ASTNode):
         return f'Describe(name={self._name}, children={self._children}'
 
 
-class Example(ASTLeave, CodeNode):
+class Example(ASTLeaf, CodeNode, NamedNode):
     def __init__(self, name, code):
         self._name = name
         self._code = code
@@ -55,7 +61,8 @@ class Example(ASTLeave, CodeNode):
     def __repr__(self):
         return f'Example(name={self._name}, code={self._code}'
 
-class Before(ASTLeave, CodeNode):
+
+class Before(ASTLeaf, CodeNode):
     def __init__(self, code):
         self._code = code
 
