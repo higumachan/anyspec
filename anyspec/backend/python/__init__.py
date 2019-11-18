@@ -33,11 +33,11 @@ def let_to_function(let: Let) -> FunctionDef:
 class TestCaseBuilder(object):
     def __init__(self, root_nodes: List[ASTNode]) -> None:
         self._root_nodes = root_nodes
-        self.testcases = []
-        self.import_code = []
+        self.testcases = []  # type: List[FunctionDef]
+        self.import_nodes = []  # type: List[AST]
         first_node = self._root_nodes[0]
         if isinstance(first_node, Import):
-            self.import_code = parse_code(first_node.code)
+            self.import_nodes = parse_code(first_node.code)
 
     def describe_linearize_preorder(self):
         for root_node in [root_node for root_node in self._root_nodes if isinstance(root_node, Describe)]:
@@ -58,24 +58,22 @@ class TestCaseBuilder(object):
         for ln in let_nodes:
             let_context[ln.name] = ln
 
-        function_codes = [let_to_function(v) for v in let_context.values()]
+        let_function_nodes = [let_to_function(v) for v in let_context.values()]
 
         function_name = "test_" +\
                         "_".join([node.name for node in nodes if isinstance(node, NamedNode)]) +\
                         "_" + terminal.name
-        codes_related_describes = list(concat([parse_code(code_node.code) for dnode in nodes if isinstance(dnode, Describe) for code_node in dnode.children if isinstance(code_node, Before)]))
-        codes = function_codes + codes_related_describes + parse_code(terminal.code)
-        #code = codegen.to_source(create_function_def(function_name, codes))
+        nodes_related_describes = list(concat([parse_code(code_node.code) for dnode in nodes if isinstance(dnode, Describe) for code_node in dnode.children if isinstance(code_node, Before)]))
+        nodes = let_function_nodes + nodes_related_describes + parse_code(terminal.code)
 
-        self.testcases.append(create_function_def(function_name, codes))
+        self.testcases.append(create_function_def(function_name, nodes))
 
 
 class PythonCompiler(object):
     def compile(self, ast_nodes: List[ASTNode]):
         testcase_builder = TestCaseBuilder(ast_nodes)
         testcase_builder.describe_linearize_preorder()
-        #code = testcase_builder.import_code + "\n\n".join(testcase_builder.testcases) + '\n'
-        code = codegen.to_source(create_module(testcase_builder.import_code + testcase_builder.testcases))
+        code = codegen.to_source(create_module(testcase_builder.import_nodes + testcase_builder.testcases))
         return code
 
 
