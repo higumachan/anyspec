@@ -14,7 +14,7 @@ $end
     code = cmp.compile(anyspec_parser.parseString(spec))
 
     assert code == """def test_simple_method_example1():
-    print("HelloWorld")
+    print('HelloWorld')
 """
 
 
@@ -31,8 +31,8 @@ def test_multi_line():
     code = cmp.compile(anyspec_parser.parseString(spec))
 
     assert code == """def test_simple_method_example1():
-    print("HelloWorld")
-    print("HelloWorld")
+    print('HelloWorld')
+    print('HelloWorld')
 """
 
 
@@ -53,10 +53,10 @@ def test_before():
     code = cmp.compile(anyspec_parser.parseString(spec))
 
     assert code == """def test_simple_method_example1():
-    print("before")
-    print("before")
-    print("HelloWorld")
-    print("HelloWorld")
+    print('before')
+    print('before')
+    print('HelloWorld')
+    print('HelloWorld')
 """
 
 
@@ -75,8 +75,9 @@ def test_let():
     code = cmp.compile(anyspec_parser.parseString(spec))
 
     assert code == """def test_simple_method_example1():
+
     def val():
-        return "test"
+        return 'test'
     print(val())
 """
 
@@ -101,8 +102,9 @@ def test_let_multi_set():
     code = cmp.compile(anyspec_parser.parseString(spec))
 
     assert code == """def test_simple_method_simple_method2_example1():
+
     def val():
-        return "nadeko"
+        return 'nadeko'
     print(val())
 """
 
@@ -122,8 +124,9 @@ def test_subject():
     code = cmp.compile(anyspec_parser.parseString(spec))
 
     assert code == """def test_simple_method_example1():
+
     def subject():
-        return "test"
+        return 'test'
     print(subject())
 """
 
@@ -148,5 +151,5 @@ def test_import():
 import functools
 
 def test_simple_method_example1():
-    print("HelloWorld")
+    print('HelloWorld')
 """

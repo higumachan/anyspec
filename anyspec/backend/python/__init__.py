@@ -1,21 +1,56 @@
 import itertools
+from _ast import Module, FunctionDef, AST, Expr, arguments
 from typing import List
+import codegen
+import ast
 
-from anyspec.frontend.ast.node import ASTNode, Describe, Example, CodeNode, ASTLeaf, NamedNode, Before, Let, Import
+from toolz import concat
+
+from anyspec.frontend.spec_ast.node import ASTNode, Describe, Example, CodeNode, ASTLeaf, NamedNode, Before, Let, Import
 
 INDENT = '    '  # TODO(higumachan): これをどうにかする
 
 
 def align_indent(code: str, num_output_indent=1) -> str:
-    code = code.strip('\n\r')
-    num_indent = len(list(itertools.takewhile(lambda x: x == '\t' or x == ' ', code)))
-    lines = [INDENT * num_output_indent + line[num_indent:] for line in code.splitlines()]
+    code = f"def test():" + code
+    parsed_tree = ast.parse(code)
+    def_function_node = parsed_tree.body[0]
+    assert isinstance(def_function_node, FunctionDef)
+    code = "\n".join([codegen.to_source(expr_node) for expr_node in def_function_node.body])
+    return indent_code(code, num_output_indent)
+
+
+def parse_code(code: str) -> List[AST]:
+    code = f"def test():" + code  # indentがあるとparseできないため一旦関数の中に入れる
+    parsed_tree = ast.parse(code)
+    def_function_node = parsed_tree.body[0]
+    assert isinstance(def_function_node, FunctionDef)
+    return def_function_node.body
+
+
+def create_function_def(name, exprs: List[AST]):
+    return FunctionDef(name=name, body=exprs, args=arguments(args=[], vararg=None, kwarg=None, defaults=[], kwonlyargs=[], kw_defaults=[]), decorator_list=[], returns=None)
+
+
+def create_module(nodes: List[AST]):
+    return Module(body=nodes)
+
+
+def transform_code(code: str, function_name: str) -> str:
+    code = f"def {function_name}():" + code
+    parsed_tree = ast.parse(code)
+    code = codegen.to_source(parsed_tree)
+    return code
+
+
+def indent_code(code: str, num_indent: int) -> str:
+    lines = [INDENT * num_indent + line for line in code.splitlines()]
     return "\n".join(lines)
 
 
-def let_to_function(let):
-    return f"""{INDENT}def {let.name}():
-{align_indent(let.code, num_output_indent=2)}"""  # TODO(higumachan): 2度呼び出したときは再利用する
+def let_to_function(let: Let) -> FunctionDef:
+    nodes = parse_code(let.code)
+    return create_function_def(let.name, nodes)
 
 
 class TestCaseBuilder(object):
@@ -51,11 +86,11 @@ class TestCaseBuilder(object):
         function_name = "test_" +\
                         "_".join([node.name for node in nodes if isinstance(node, NamedNode)]) +\
                         "_" + terminal.name
-        codes_related_describes = [align_indent(code_node.code) for dnode in nodes if isinstance(dnode, Describe) for code_node in dnode.children if isinstance(code_node, Before)]
-        codes = function_codes + codes_related_describes + [align_indent(terminal.code)]
-        code = '\n'.join(codes)
+        codes_related_describes = list(concat([parse_code(code_node.code) for dnode in nodes if isinstance(dnode, Describe) for code_node in dnode.children if isinstance(code_node, Before)]))
+        codes = function_codes + codes_related_describes + parse_code(terminal.code)
+        code = codegen.to_source(create_function_def(function_name, codes))
 
-        self.testcases.append(f"def {function_name}():\n{code}")
+        self.testcases.append(code)
 
 
 class PythonCompiler(object):
@@ -68,4 +103,4 @@ class PythonCompiler(object):
 
 if __name__ == '__main__':
     pc = PythonCompiler()
-    pc.compile(Describe("nadeko", [Describe("rikka", [Example("noe", "print('HelloWorld')")])]))
+    print(pc.compile([Describe("nadeko", [Describe("rikka", [Example("noe", "print('HelloWorld')")])])]))

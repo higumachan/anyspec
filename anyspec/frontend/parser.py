@@ -1,14 +1,47 @@
+import ast
+
 from pyparsing import Word, OneOrMore, Literal, alphas, nums, alphanums, White, Combine, QuotedString, Optional, \
-    Forward, ZeroOrMore
+    Forward, ZeroOrMore, Token
 import pyparsing
 import functools
 
-from anyspec.frontend.ast.node import Example, Describe, Before, Let, Import
+from anyspec.frontend.spec_ast.node import Example, Describe, Before, Let, Import
 
 
 def anyspec_literal(name):
     prefix = '$'
     return Literal(f'{prefix}{name}')
+
+
+class PythonCode(Token):
+    def __init__(self):
+        super().__init__()
+        self.name = "PythonCode"
+
+    def parseImpl(self, instring, loc, doActions=True):
+        indent = instring[:loc].splitlines()[-1]
+        lines = instring[loc:].splitlines()
+        ll = ""
+        result = ""
+        next_loc = loc
+        result_loc = loc
+        for i, l in enumerate(lines):
+            lt = l
+            if l.startswith(indent):
+                lt = lt[len(indent):]
+            ll_tmp = ll + lt + '\n'
+            next_loc += len(l) + 1
+            try:
+                #print('(' + ll_tmp + ')')
+                ast.parse(ll_tmp)
+            except SyntaxError as e:
+                pass
+            else:
+                result = ll_tmp
+                result_loc = next_loc
+            ll = ll_tmp
+        #print(f"result='{result}'")
+        return result_loc, instring[loc:result_loc]
 
 
 space = OneOrMore(Word(' '))
@@ -25,7 +58,9 @@ end = anyspec_literal('end')
 
 reserved = describe | context | end
 
-code = Combine(OneOrMore(Optional(White()) + ~reserved + (Word(alphanums + '_.=+-*%/@$#!^|\'\\"()[]{}:;   ') | White())))
+#code = Combine(OneOrMore(Optional(White()) + (~reserved) + (pyparsing.quotedString | (Word(alphanums + '_.=+-*%/@$#!^|\'\\"()[]{}:;   ')) | White())))
+code = Combine(White() + PythonCode())
+#code = PythonCode()
 
 import_block = _import + code + end
 import_block.setParseAction(Import.parse_action)
@@ -52,7 +87,7 @@ context_block <<= context + ZeroOrMore(context_block | describe_block | example_
 context_block.setParseAction(Describe.parse_action)
 
 
-anyspec_parser = Optional(import_block) + ZeroOrMore(describe_block | context_block)
+anyspec_parser = Optional(import_block) + OneOrMore(describe_block | context_block)
 
 if __name__ == '__main__':
 
@@ -60,37 +95,12 @@ if __name__ == '__main__':
 $import
     import test
 $end
-$describe "test1"
-    $context "test2"
-        $let "val" 
-            return "test"
+$describe "Hello"
+    $let "test"
+        print("test")
+        a = """
         $end
-        $subject
-            return "subject"
-        $end
-        $before
-            print("before")
-            print("before")
-        $end
-        $example "case1"
-            print("test1")
-            print("test2")
-        $end
-    $end
-    $describe "test3"
+        """
     $end
 $end
 '''))
-
-    print(anyspec_parser.parseString("""
-$describe "PythonCompiler"
-    $context "compile"
-        $let "cmp"
-            return "test"
-        $end
-        $subject
-            return cmp().compile(anyspec_parser.parseString(spec)[0])
-        $end
-    $end
-$end
-"""))
