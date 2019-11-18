@@ -8,17 +8,6 @@ from toolz import concat
 
 from anyspec.frontend.spec_ast.node import ASTNode, Describe, Example, CodeNode, ASTLeaf, NamedNode, Before, Let, Import
 
-INDENT = '    '  # TODO(higumachan): これをどうにかする
-
-
-def align_indent(code: str, num_output_indent=1) -> str:
-    code = f"def test():" + code
-    parsed_tree = ast.parse(code)
-    def_function_node = parsed_tree.body[0]
-    assert isinstance(def_function_node, FunctionDef)
-    code = "\n".join([codegen.to_source(expr_node) for expr_node in def_function_node.body])
-    return indent_code(code, num_output_indent)
-
 
 def parse_code(code: str) -> List[AST]:
     code = f"def test():" + code  # indentがあるとparseできないため一旦関数の中に入れる
@@ -36,18 +25,6 @@ def create_module(nodes: List[AST]):
     return Module(body=nodes)
 
 
-def transform_code(code: str, function_name: str) -> str:
-    code = f"def {function_name}():" + code
-    parsed_tree = ast.parse(code)
-    code = codegen.to_source(parsed_tree)
-    return code
-
-
-def indent_code(code: str, num_indent: int) -> str:
-    lines = [INDENT * num_indent + line for line in code.splitlines()]
-    return "\n".join(lines)
-
-
 def let_to_function(let: Let) -> FunctionDef:
     nodes = parse_code(let.code)
     return create_function_def(let.name, nodes)
@@ -57,10 +34,10 @@ class TestCaseBuilder(object):
     def __init__(self, root_nodes: List[ASTNode]) -> None:
         self._root_nodes = root_nodes
         self.testcases = []
-        self.import_code = ""
+        self.import_code = []
         first_node = self._root_nodes[0]
         if isinstance(first_node, Import):
-            self.import_code = align_indent(first_node.code, 0) + '\n\n'
+            self.import_code = parse_code(first_node.code)
 
     def describe_linearize_preorder(self):
         for root_node in [root_node for root_node in self._root_nodes if isinstance(root_node, Describe)]:
@@ -88,16 +65,17 @@ class TestCaseBuilder(object):
                         "_" + terminal.name
         codes_related_describes = list(concat([parse_code(code_node.code) for dnode in nodes if isinstance(dnode, Describe) for code_node in dnode.children if isinstance(code_node, Before)]))
         codes = function_codes + codes_related_describes + parse_code(terminal.code)
-        code = codegen.to_source(create_function_def(function_name, codes))
+        #code = codegen.to_source(create_function_def(function_name, codes))
 
-        self.testcases.append(code)
+        self.testcases.append(create_function_def(function_name, codes))
 
 
 class PythonCompiler(object):
     def compile(self, ast_nodes: List[ASTNode]):
         testcase_builder = TestCaseBuilder(ast_nodes)
         testcase_builder.describe_linearize_preorder()
-        code = testcase_builder.import_code + "\n\n".join(testcase_builder.testcases) + '\n'
+        #code = testcase_builder.import_code + "\n\n".join(testcase_builder.testcases) + '\n'
+        code = codegen.to_source(create_module(testcase_builder.import_code + testcase_builder.testcases))
         return code
 
 
