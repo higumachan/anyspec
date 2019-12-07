@@ -170,3 +170,20 @@ def test_name_with_space():
     assert code == """def test_simple_method_example1():
     print('HelloWorld')
 """
+
+
+def test_name_with_japanese():
+    spec = """
+    $describe "シンプルメソッド" 
+        $example "example1"
+            print("HelloWorld")
+        $end
+    $end
+    """
+
+    cmp = PythonCompiler()
+    code = cmp.compile(anyspec_parser.parseString(spec))
+
+    assert code == """def test_シンプルメソッド_example1():
+    print('HelloWorld')
+"""
