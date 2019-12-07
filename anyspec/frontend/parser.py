@@ -49,6 +49,7 @@ name = (QuotedString("\"") | QuotedString("'"))
 describe = anyspec_literal('describe') + name
 context = anyspec_literal('context') + name
 example = anyspec_literal('example') + name
+it = anyspec_literal('it') + name
 before = anyspec_literal('before')
 let = anyspec_literal('let')
 let_exc = anyspec_literal('let!')
@@ -58,15 +59,16 @@ end = anyspec_literal('end')
 
 reserved = describe | context | end
 
-#code = Combine(OneOrMore(Optional(White()) + (~reserved) + (pyparsing.quotedString | (Word(alphanums + '_.=+-*%/@$#!^|\'\\"()[]{}:;   ')) | White())))
 code = Combine(White() + PythonCode())
-#code = PythonCode()
 
 import_block = _import + code + end
 import_block.setParseAction(Import.parse_action)
 
 example_block = example + code + end
 example_block.setParseAction(Example.parse_action)
+
+it_block = it + code + end
+it_block.setParseAction(Example.parse_action)
 
 before_block = before + code + end
 before_block.setParseAction(Before.parse_action)
@@ -80,10 +82,10 @@ subject_block.setParseAction(Let.subject_parse_action)
 describe_block = Forward()
 context_block = Forward()
 
-describe_block <<= describe + ZeroOrMore(context_block | describe_block | example_block | before_block | let_block | subject_block) + end
+describe_block <<= describe + ZeroOrMore(context_block | describe_block | example_block | it_block | before_block | let_block | subject_block) + end
 describe_block.setParseAction(Describe.parse_action)
 
-context_block <<= context + ZeroOrMore(context_block | describe_block | example_block | before_block | let_block | subject_block) + end
+context_block <<= context + ZeroOrMore(context_block | describe_block | example_block | it_block | before_block | let_block | subject_block) + end
 context_block.setParseAction(Describe.parse_action)
 
 

@@ -51,6 +51,10 @@ class TestCaseBuilder(object):
         for child in ast.children:
             self._linearize_preorder(child, agg + [ast])
 
+    @staticmethod
+    def _name_transform(name):
+        return name.replace(" ", "_")
+
     # TODO(higumachan): letで定義した変数は関数の形じゃなくても使えるようにする
     def add_testcase(self, nodes: List[ASTNode], terminal: Example):
         let_nodes = [let_node for dnode in nodes if isinstance(dnode, Describe) for let_node in dnode.children if isinstance(let_node, Let)]
@@ -61,8 +65,8 @@ class TestCaseBuilder(object):
         let_function_nodes = [let_to_function(v) for v in let_context.values()]
 
         function_name = "test_" +\
-                        "_".join([node.name for node in nodes if isinstance(node, NamedNode)]) +\
-                        "_" + terminal.name
+                        "_".join([self._name_transform(node.name) for node in nodes if isinstance(node, NamedNode)]) +\
+                        "_" + self._name_transform(terminal.name)
         nodes_related_describes = list(concat([parse_code(code_node.code) for dnode in nodes if isinstance(dnode, Describe) for code_node in dnode.children if isinstance(code_node, Before)]))
         nodes = let_function_nodes + nodes_related_describes + parse_code(terminal.code)
 
