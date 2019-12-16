@@ -58,6 +58,7 @@ $end
 def test_let_block():
     spec = """
 with describe("simple_method"):
+    @let
     def val():
         a = "not test"
         return "test"
